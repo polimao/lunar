@@ -3,11 +3,15 @@ const mb = menubar({
 dir:__dirname,
   width: 540,
   height: 425,
-  icon: __dirname + '/cat.png',
+  icon: __dirname + '/time.png',
   showDockIcon: false,
   tooltip :"农历",
   // showOnRightClick: true,
 
+})
+mb.on('ready', function ready () {
+  console.log('app is ready')
+  mb.showWindow()
 })
 
 
@@ -33,7 +37,7 @@ ipc.on('asynchronous-message', function (event, arg, tray) {
 
         // console.log(tray)
 
-        tray.setImage(path.join(__dirname, 'test.png'))
+        tray.setImage(path.join(__dirname, 'time.png'))
 
     },500)
 
@@ -50,7 +54,7 @@ function createIconByBase64(data){
     var base64 = data.replace(/^data:image\/\w+;base64,/, "")
     var dataBuffer = new Buffer(base64, 'base64')
     // console.log('dataBuffer是否是Buffer对象：'+Buffer.isBuffer(dataBuffer))
-    fs.writeFile(path.join(__dirname, 'test.png'),dataBuffer,function(err){//用fs写入文件
+    fs.writeFile(path.join(__dirname, 'time.png'),dataBuffer,function(err){//用fs写入文件
         if(err){
             console.log(err)
         }else{
