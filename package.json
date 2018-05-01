@@ -1,8 +1,8 @@
 {
   "name": "Lunar",
   "version": "1.0.0",
-  "author":"limao",
-  "description": "example menubar electron app",
+  "author": "limao",
+  "description": "农历托盘小工具",
   "dependencies": {
     "menubar": "*"
   },
@@ -13,18 +13,19 @@
   },
   "main": "dist/main.js",
   "scripts": {
-    "build": "electron-packager ./dist Limo --platform=win32 --arch=x64 --version=0.36.0",
+    "build": "electron-packager ./dist Lunar --platform=darwin --arch=x64 --version=1.8.6",
     "start": "electron .",
     "pack": "electron-builder"
   },
   "build": {
-    "productName": "Limo",
+    "productName": "Lunar",
     "appId": "org.simulatedgreg.electron-vue",
     "directories": {
       "output": "build"
     },
-
-    "files": ["dist/**/**/*"],
+    "files": [
+      "dist/**/**/*"
+    ],
     "mac": {
       "icon": "dist/panda.png"
     },
@@ -32,7 +33,7 @@
       "icon": "dist/panda.png"
     },
     "linux": {
-      "icon": "panda.png"
+      "icon": "dist/panda.png"
     }
   }
 }
