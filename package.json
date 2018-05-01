@@ -4,6 +4,8 @@
   "author": "limao",
   "description": "农历托盘小工具",
   "dependencies": {
+    "captchapng": "0.0.1",
+    "gd-bmp": "^1.2.4",
     "menubar": "*"
   },
   "devDependencies": {
