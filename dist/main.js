@@ -15,7 +15,8 @@ dir:__dirname,
 })
 mb.on('ready', function ready () {
   console.log('app is ready')
-  mb.showWindow()
+  mb.showWindow() // 打开执行渲染进程的 canvas icon 生成
+  mb.hideWindow() // 关闭让托盘 不会被启动时 停留在选中状态
 })
 
 const path = require('path')
