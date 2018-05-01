@@ -1,11 +1,15 @@
 var menubar = require('menubar')
 const mb = menubar({
+  preloadWindow:true,
 dir:__dirname,
   width: 540,
   height: 425,
-  icon: __dirname + '/time.png',
+  icon: __dirname + '/cat.png',
   showDockIcon: false,
   tooltip :"农历",
+  webPreferences:{devTools:true},
+  show:true,
+  // frame:false
   // showOnRightClick: true,
 
 })
@@ -14,8 +18,8 @@ mb.on('ready', function ready () {
   mb.showWindow()
 })
 
-
 const path = require('path')
+const app = require('electron').app
 
 
 let tray
@@ -37,9 +41,11 @@ ipc.on('asynchronous-message', function (event, arg, tray) {
 
         // console.log(tray)
 
-        tray.setImage(path.join(__dirname, 'time.png'))
+        tray.setImage(path.join(app.getPath("userData"), 'time.png'))
 
     },500)
+
+    // event.sender.send('asynchronous-reply', 'pong')
 
 })
 
@@ -54,7 +60,7 @@ function createIconByBase64(data){
     var base64 = data.replace(/^data:image\/\w+;base64,/, "")
     var dataBuffer = new Buffer(base64, 'base64')
     // console.log('dataBuffer是否是Buffer对象：'+Buffer.isBuffer(dataBuffer))
-    fs.writeFile(path.join(__dirname, 'time.png'),dataBuffer,function(err){//用fs写入文件
+    fs.writeFile(path.join(app.getPath("userData"), 'time.png'),dataBuffer,function(err){//用fs写入文件
         if(err){
             console.log(err)
         }else{

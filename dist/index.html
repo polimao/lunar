@@ -9,6 +9,246 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <link href="./css/wnl.css" rel="stylesheet" type="text/css" />
 
+
+    <script type="text/javascript">
+
+        // 实现时钟效果
+
+        function textToImg() {
+            console.log('textToImg')
+            var txt = getDate();
+
+            var canvas = document.createElement("canvas")
+            var real_canvas = document.createElement("canvas")
+
+            canvas.width = 110;
+            canvas.height = 22;
+
+
+            var ratio = getRatio(canvas)
+            canvas.style.width = canvas.width;
+            canvas.style.height = canvas.height;
+
+            canvas.width = canvas.width * ratio;
+            canvas.height = canvas.height * ratio;
+
+
+            var ctx = canvas.getContext('2d');
+
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#000";
+
+            ctx.font = '15px sans-serif';
+            ctx.textBaseline = 'top';
+
+            ctx.fillText(txt, 0, 0, canvas.width,canvas.height);
+
+
+            real_canvas.width = 110;
+            real_canvas.height = 22;
+            var real_ctx = real_canvas.getContext('2d');
+
+            real_ctx.drawImage(canvas, -10, -5, canvas.width, canvas.height,
+                0, 0, 110, 22);
+
+
+            var data = real_canvas.toDataURL("image/png");
+
+            const ipc = require('electron').ipcRenderer
+
+            // console.log('textToImg')
+
+            ipc.send('asynchronous-message', data)
+
+            // ipc.on('asynchronous-reply', function (event, arg) {
+            //   const message = `Asynchronous message reply: ${arg}`
+            //     console.log(message)
+            // })
+
+        }
+        var t;
+        clearInterval(t)
+        t = setInterval(textToImg,1000)
+
+
+        function getRatio(context)
+        {
+            // 屏幕的设备像素比
+            var devicePixelRatio = window.devicePixelRatio || 1;
+
+            // 浏览器在渲染canvas之前存储画布信息的像素比
+            var backingStoreRatio = context.webkitBackingStorePixelRatio ||
+                                context.mozBackingStorePixelRatio ||
+                                context.msBackingStorePixelRatio ||
+                                context.oBackingStorePixelRatio ||
+                                context.backingStorePixelRatio || 1;
+
+            // canvas的实际渲染倍率
+            var ratio = devicePixelRatio / backingStoreRatio;
+
+            return ratio
+        }
+
+        function getDate()
+        {
+            var myDate = new Date();
+            var weekday=["周日","周一","周二","周三","周四","周五","周六"];
+
+            var d = myDate.getDay();
+
+            var h = myDate.getHours();
+            var m = myDate.getMinutes();
+            var s = myDate.getSeconds();
+            var space
+            if(s%2 == 0){
+                space = ' '
+            }else{
+                space = ':'
+            }
+            h = ('0'+h).slice(-2)
+            m = ('0'+m).slice(-2)
+            s = ('0'+s).slice(-2)
+
+            return weekday[d]+' '+h+space+m+space+s
+        }
+
+        getRealRatio()
+
+        function getRealRatio() {
+            var prototype = CanvasRenderingContext2D.prototype;
+            var pixelRatio = (function() {
+                    var canvas = document.createElement('canvas'),
+                            context = canvas.getContext('2d'),
+                            backingStore = context.backingStorePixelRatio ||
+                                context.webkitBackingStorePixelRatio ||
+                                context.mozBackingStorePixelRatio ||
+                                context.msBackingStorePixelRatio ||
+                                context.oBackingStorePixelRatio ||
+                                context.backingStorePixelRatio || 1;
+
+                    return (window.devicePixelRatio || 1) / backingStore;
+                })(),
+
+                forEach = function(obj, func) {
+                    for (var p in obj) {
+                        if (obj.hasOwnProperty(p)) {
+                            func(obj[p], p);
+                        }
+                    }
+                },
+
+                ratioArgs = {
+                    'fillRect': 'all',
+                    'clearRect': 'all',
+                    'strokeRect': 'all',
+                    'moveTo': 'all',
+                    'lineTo': 'all',
+                    'arc': [0,1,2],
+                    'arcTo': 'all',
+                    'bezierCurveTo': 'all',
+                    'isPointinPath': 'all',
+                    'isPointinStroke': 'all',
+                    'quadraticCurveTo': 'all',
+                    'rect': 'all',
+                    'translate': 'all',
+                    'createRadialGradient': 'all',
+                    'createLinearGradient': 'all'
+                };
+
+            if (pixelRatio === 1) return;
+
+            forEach(ratioArgs, function(value, key) {
+                prototype[key] = (function(_super) {
+                    return function() {
+                        var i, len,
+                            args = Array.prototype.slice.call(arguments);
+
+                        if (value === 'all') {
+                            args = args.map(function(a) {
+                                return a * pixelRatio;
+                            });
+                        }
+                        else if (Array.isArray(value)) {
+                            for (i = 0, len = value.length; i < len; i++) {
+                                args[value[i]] *= pixelRatio;
+                            }
+                        }
+
+                        return _super.apply(this, args);
+                    };
+                })(prototype[key]);
+            });
+
+            prototype.ratio = pixelRatio;
+             // Stroke lineWidth adjustment
+            prototype.stroke = (function(_super) {
+                return function() {
+                    this.lineWidth *= pixelRatio;
+                    _super.apply(this, arguments);
+                    this.lineWidth /= pixelRatio;
+                };
+            })(prototype.stroke);
+
+            // Text
+            //
+            prototype.fillText = (function(_super) {
+                return function() {
+                    var args = Array.prototype.slice.call(arguments);
+
+                    args[1] *= pixelRatio; // x
+                    args[2] *= pixelRatio; // y
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m * pixelRatio) + u;
+                        }
+                    );
+
+                    _super.apply(this, args);
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m / pixelRatio) + u;
+                        }
+                    );
+                };
+            })(prototype.fillText);
+
+            prototype.strokeText = (function(_super) {
+                return function() {
+                    var args = Array.prototype.slice.call(arguments);
+
+                    args[1] *= pixelRatio; // x
+                    args[2] *= pixelRatio; // y
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m * pixelRatio) + u;
+                        }
+                    );
+
+                    _super.apply(this, args);
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m / pixelRatio) + u;
+                        }
+                    );
+                };
+            })(prototype.strokeText);
+            // // 设置画布大小
+            // document.getElementById('canvas').width = document.getElementById('canvas').style.width * pixelRatio;
+            // document.getElementById('canvas').height = document.getElementById('canvas').style.height * pixelRatio;
+
+        }
+
+    </script>
     <script>
 
 
@@ -1245,238 +1485,6 @@
     </div>
 
 
-
-    <script type="text/javascript">
-
-        // 实现时钟效果
-
-        function textToImg() {
-            var txt = getDate();
-
-            var canvas = document.createElement("canvas")
-            var real_canvas = document.createElement("canvas")
-
-            canvas.width = 110;
-            canvas.height = 22;
-
-
-            var ratio = getRatio(canvas)
-            canvas.style.width = canvas.width;
-            canvas.style.height = canvas.height;
-
-            canvas.width = canvas.width * ratio;
-            canvas.height = canvas.height * ratio;
-
-
-            var ctx = canvas.getContext('2d');
-
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = "#000";
-
-            ctx.font = '15px sans-serif';
-            ctx.textBaseline = 'top';
-
-            ctx.fillText(txt, 0, 0, canvas.width,canvas.height);
-
-
-            real_canvas.width = 110;
-            real_canvas.height = 22;
-            var real_ctx = real_canvas.getContext('2d');
-
-            real_ctx.drawImage(canvas, -10, -5, canvas.width, canvas.height,
-                0, 0, 110, 22);
-
-
-            var data = real_canvas.toDataURL("image/png");
-
-            const ipc = require('electron').ipcRenderer
-
-            ipc.send('asynchronous-message', data)
-
-        }
-        var t;
-        clearInterval(t)
-        t = setInterval(textToImg,1000)
-
-
-        function getRatio(context)
-        {
-            // 屏幕的设备像素比
-            var devicePixelRatio = window.devicePixelRatio || 1;
-
-            // 浏览器在渲染canvas之前存储画布信息的像素比
-            var backingStoreRatio = context.webkitBackingStorePixelRatio ||
-                                context.mozBackingStorePixelRatio ||
-                                context.msBackingStorePixelRatio ||
-                                context.oBackingStorePixelRatio ||
-                                context.backingStorePixelRatio || 1;
-
-            // canvas的实际渲染倍率
-            var ratio = devicePixelRatio / backingStoreRatio;
-
-            return ratio
-        }
-
-        function getDate()
-        {
-            var myDate = new Date();
-            var weekday=["周日","周一","周二","周三","周四","周五","周六"];
-
-            var d = myDate.getDay();
-
-            var h = myDate.getHours();
-            var m = myDate.getMinutes();
-            var s = myDate.getSeconds();
-            var space
-            if(s%2 == 0){
-                space = ' '
-            }else{
-                space = ':'
-            }
-            h = ('0'+h).slice(-2)
-            m = ('0'+m).slice(-2)
-            s = ('0'+s).slice(-2)
-
-            return weekday[d]+' '+h+space+m+space+s
-        }
-
-        getRealRatio()
-
-        function getRealRatio() {
-            var prototype = CanvasRenderingContext2D.prototype;
-            var pixelRatio = (function() {
-                    var canvas = document.createElement('canvas'),
-                            context = canvas.getContext('2d'),
-                            backingStore = context.backingStorePixelRatio ||
-                                context.webkitBackingStorePixelRatio ||
-                                context.mozBackingStorePixelRatio ||
-                                context.msBackingStorePixelRatio ||
-                                context.oBackingStorePixelRatio ||
-                                context.backingStorePixelRatio || 1;
-
-                    return (window.devicePixelRatio || 1) / backingStore;
-                })(),
-
-                forEach = function(obj, func) {
-                    for (var p in obj) {
-                        if (obj.hasOwnProperty(p)) {
-                            func(obj[p], p);
-                        }
-                    }
-                },
-
-                ratioArgs = {
-                    'fillRect': 'all',
-                    'clearRect': 'all',
-                    'strokeRect': 'all',
-                    'moveTo': 'all',
-                    'lineTo': 'all',
-                    'arc': [0,1,2],
-                    'arcTo': 'all',
-                    'bezierCurveTo': 'all',
-                    'isPointinPath': 'all',
-                    'isPointinStroke': 'all',
-                    'quadraticCurveTo': 'all',
-                    'rect': 'all',
-                    'translate': 'all',
-                    'createRadialGradient': 'all',
-                    'createLinearGradient': 'all'
-                };
-
-            if (pixelRatio === 1) return;
-
-            forEach(ratioArgs, function(value, key) {
-                prototype[key] = (function(_super) {
-                    return function() {
-                        var i, len,
-                            args = Array.prototype.slice.call(arguments);
-
-                        if (value === 'all') {
-                            args = args.map(function(a) {
-                                return a * pixelRatio;
-                            });
-                        }
-                        else if (Array.isArray(value)) {
-                            for (i = 0, len = value.length; i < len; i++) {
-                                args[value[i]] *= pixelRatio;
-                            }
-                        }
-
-                        return _super.apply(this, args);
-                    };
-                })(prototype[key]);
-            });
-
-            prototype.ratio = pixelRatio;
-             // Stroke lineWidth adjustment
-            prototype.stroke = (function(_super) {
-                return function() {
-                    this.lineWidth *= pixelRatio;
-                    _super.apply(this, arguments);
-                    this.lineWidth /= pixelRatio;
-                };
-            })(prototype.stroke);
-
-            // Text
-            //
-            prototype.fillText = (function(_super) {
-                return function() {
-                    var args = Array.prototype.slice.call(arguments);
-
-                    args[1] *= pixelRatio; // x
-                    args[2] *= pixelRatio; // y
-
-                    this.font = this.font.replace(
-                        /(\d+)(px|em|rem|pt)/g,
-                        function(w, m, u) {
-                            return (m * pixelRatio) + u;
-                        }
-                    );
-
-                    _super.apply(this, args);
-
-                    this.font = this.font.replace(
-                        /(\d+)(px|em|rem|pt)/g,
-                        function(w, m, u) {
-                            return (m / pixelRatio) + u;
-                        }
-                    );
-                };
-            })(prototype.fillText);
-
-            prototype.strokeText = (function(_super) {
-                return function() {
-                    var args = Array.prototype.slice.call(arguments);
-
-                    args[1] *= pixelRatio; // x
-                    args[2] *= pixelRatio; // y
-
-                    this.font = this.font.replace(
-                        /(\d+)(px|em|rem|pt)/g,
-                        function(w, m, u) {
-                            return (m * pixelRatio) + u;
-                        }
-                    );
-
-                    _super.apply(this, args);
-
-                    this.font = this.font.replace(
-                        /(\d+)(px|em|rem|pt)/g,
-                        function(w, m, u) {
-                            return (m / pixelRatio) + u;
-                        }
-                    );
-                };
-            })(prototype.strokeText);
-            // // 设置画布大小
-            // document.getElementById('canvas').width = document.getElementById('canvas').style.width * pixelRatio;
-            // document.getElementById('canvas').height = document.getElementById('canvas').style.height * pixelRatio;
-
-        }
-
-    </script>
 </body>
 
 </html>
