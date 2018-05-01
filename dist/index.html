@@ -1273,11 +1273,9 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // ctx.scale(2, 2)
-
             ctx.fillStyle = "#000";
 
-            ctx.font = '32px sans-serif';
+            ctx.font = '15px sans-serif';
             ctx.textBaseline = 'top';
 
             ctx.fillText(txt, 0, 0, canvas.width,canvas.height);
@@ -1326,11 +1324,11 @@
             var myDate = new Date();
             var weekday=["周日","周一","周二","周三","周四","周五","周六"];
 
-            var d = myDate.getDay(); //获取当前星期X(0-6,0代表星期天)
+            var d = myDate.getDay();
 
-            var h = myDate.getHours(); //获取当前小时数(0-23)
-            var m = myDate.getMinutes(); //获取当前分钟数(0-59)
-            var s = myDate.getSeconds(); //获取当前秒数(0-59)
+            var h = myDate.getHours();
+            var m = myDate.getMinutes();
+            var s = myDate.getSeconds();
             var space
             if(s%2 == 0){
                 space = ' '
@@ -1343,6 +1341,141 @@
 
             return weekday[d]+' '+h+space+m+space+s
         }
+
+        getRealRatio()
+
+        function getRealRatio() {
+            var prototype = CanvasRenderingContext2D.prototype;
+            var pixelRatio = (function() {
+                    var canvas = document.createElement('canvas'),
+                            context = canvas.getContext('2d'),
+                            backingStore = context.backingStorePixelRatio ||
+                                context.webkitBackingStorePixelRatio ||
+                                context.mozBackingStorePixelRatio ||
+                                context.msBackingStorePixelRatio ||
+                                context.oBackingStorePixelRatio ||
+                                context.backingStorePixelRatio || 1;
+
+                    return (window.devicePixelRatio || 1) / backingStore;
+                })(),
+
+                forEach = function(obj, func) {
+                    for (var p in obj) {
+                        if (obj.hasOwnProperty(p)) {
+                            func(obj[p], p);
+                        }
+                    }
+                },
+
+                ratioArgs = {
+                    'fillRect': 'all',
+                    'clearRect': 'all',
+                    'strokeRect': 'all',
+                    'moveTo': 'all',
+                    'lineTo': 'all',
+                    'arc': [0,1,2],
+                    'arcTo': 'all',
+                    'bezierCurveTo': 'all',
+                    'isPointinPath': 'all',
+                    'isPointinStroke': 'all',
+                    'quadraticCurveTo': 'all',
+                    'rect': 'all',
+                    'translate': 'all',
+                    'createRadialGradient': 'all',
+                    'createLinearGradient': 'all'
+                };
+
+            if (pixelRatio === 1) return;
+
+            forEach(ratioArgs, function(value, key) {
+                prototype[key] = (function(_super) {
+                    return function() {
+                        var i, len,
+                            args = Array.prototype.slice.call(arguments);
+
+                        if (value === 'all') {
+                            args = args.map(function(a) {
+                                return a * pixelRatio;
+                            });
+                        }
+                        else if (Array.isArray(value)) {
+                            for (i = 0, len = value.length; i < len; i++) {
+                                args[value[i]] *= pixelRatio;
+                            }
+                        }
+
+                        return _super.apply(this, args);
+                    };
+                })(prototype[key]);
+            });
+
+            prototype.ratio = pixelRatio;
+             // Stroke lineWidth adjustment
+            prototype.stroke = (function(_super) {
+                return function() {
+                    this.lineWidth *= pixelRatio;
+                    _super.apply(this, arguments);
+                    this.lineWidth /= pixelRatio;
+                };
+            })(prototype.stroke);
+
+            // Text
+            //
+            prototype.fillText = (function(_super) {
+                return function() {
+                    var args = Array.prototype.slice.call(arguments);
+
+                    args[1] *= pixelRatio; // x
+                    args[2] *= pixelRatio; // y
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m * pixelRatio) + u;
+                        }
+                    );
+
+                    _super.apply(this, args);
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m / pixelRatio) + u;
+                        }
+                    );
+                };
+            })(prototype.fillText);
+
+            prototype.strokeText = (function(_super) {
+                return function() {
+                    var args = Array.prototype.slice.call(arguments);
+
+                    args[1] *= pixelRatio; // x
+                    args[2] *= pixelRatio; // y
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m * pixelRatio) + u;
+                        }
+                    );
+
+                    _super.apply(this, args);
+
+                    this.font = this.font.replace(
+                        /(\d+)(px|em|rem|pt)/g,
+                        function(w, m, u) {
+                            return (m / pixelRatio) + u;
+                        }
+                    );
+                };
+            })(prototype.strokeText);
+            // // 设置画布大小
+            // document.getElementById('canvas').width = document.getElementById('canvas').style.width * pixelRatio;
+            // document.getElementById('canvas').height = document.getElementById('canvas').style.height * pixelRatio;
+
+        }
+
     </script>
 </body>
 

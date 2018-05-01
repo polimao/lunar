@@ -40,11 +40,6 @@ ipc.on('asynchronous-message', function (event, arg, tray) {
 })
 
 
-function reloadIcon()
-{
-
-}
-
 function createIconByBase64(data){
 
 
