@@ -3,5 +3,5 @@
 -  Mac Os
 ![mac](https://github.com/yepolite/lunar/blob/readme/mac_view.jpg?raw=true)
 - Windows
-![mac](https://github.com/yepolite/lunar/blob/readme/mac_view.png?raw=true)
+![mac](https://github.com/yepolite/lunar/blob/readme/windows_view.png?raw=true)
 
